@@ -14,7 +14,3 @@ testdataframe = pd.read_csv('test-W.csv')
 
 traindata = traindataframe[['Store', 'Dept', 'Date', 'Weekly_Sales', 'Week2']]
 testdata = testdataframe[['Store', 'Dept', 'Date', 'Week']]
-
-for i in range(1,45):
-    for dept in range(1,99):
-        

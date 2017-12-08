@@ -14,13 +14,14 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
 
 dataframe = pd.read_csv('train.csv')
 dates = dataframe.Date
 
-testdata = dataframe[dataframe.Store == 1]
-testdata = testdata.Weekly_Sales[dataframe.Dept == 1]
-testdata = testdata.astype('float32')
+testdata = dataframe[dataframe.Store == 12]
+testdata = testdata.Weekly_Sales[dataframe.Dept == 98]
+#testdata = testdata.astype('float32')
 
 plt.plot(testdata)
 plt.show()
@@ -32,7 +33,7 @@ def create_dataset(dataset, lookback):
         dataY.append(dataset[i+lookback, 0])
     return np.array(dataX), np.array(dataY)
 
-np.random.seed(7)
+#np.random.seed(7)
 
 # normalize the dataset
 scaler = MinMaxScaler(feature_range=(0, 1))
@@ -46,7 +47,7 @@ test_size = len(testdata) - train_size
 train, test = testdata[0:train_size,:], testdata[train_size:len(testdata),:]
 
 # use this function to prepare the train and test datasets for modeling
-look_back = 8
+look_back = 7
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
 
@@ -56,10 +57,10 @@ testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 
 # create and fit the LSTM network
 model = Sequential()
-model.add(LSTM(16, input_shape=(1, look_back)))
+model.add(LSTM(16, input_shape=(1, look_back), activation='relu'))
 model.add(Dense(1))
 model.compile(loss='mean_absolute_error', optimizer='adam')
-model.fit(trainX, trainY, epochs=150, batch_size=1, verbose=2)
+model.fit(trainX, trainY, epochs=150, batch_size=2, verbose=1)
 
 # make predictions
 trainPredict = model.predict(trainX)
@@ -71,10 +72,10 @@ trainY = scaler.inverse_transform([trainY])
 testPredict = scaler.inverse_transform(testPredict)
 testY = scaler.inverse_transform([testY])
 
-trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
-print('Train Score: %.2f RMSE' % (trainScore))
-testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:,0]))
-print('Test Score: %.2f RMSE' % (testScore))
+trainScore = mean_absolute_error(trainY[0], trainPredict[:,0])
+print('Train Score: %.2f mae' % (trainScore))
+testScore = mean_absolute_error(testY[0], testPredict[:,0])
+print('Test Score: %.2f mae' % (testScore))
 
 # shift train predictions for plotting
 trainPredictPlot = np.empty_like(testdata)
