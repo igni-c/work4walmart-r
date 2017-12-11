@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+3# -*- coding: utf-8 -*-
 
 import numpy as np
 import pandas as pd
@@ -29,9 +29,9 @@ def get_dataframe(data_path):
 
 def create_dataset(dataframe, lookback):
     dataX, dataY = [], []
-    for i in range(len(dataframe) - lookback - 1):
-        dataX.append(dataframe[i:(i+lookback), 0])
-        dataY.append(dataframe[i+lookback, 0])
+    for i in range(len(dataframe)-1, 53, -1):
+        dataX.append(dataframe[i-52-lookback:i-52, 0])
+        dataY.append(dataframe[i, 0])
     return np.array(dataX), np.array(dataY)
 
 def normalize_data(dataset):
@@ -41,8 +41,9 @@ def normalize_data(dataset):
 
 def create_lstm_model(trainX,trainY,look_back):
     model = Sequential()
+    model.add(LSTM(16, input_shape=(1, look_back), activation='relu',return_sequences=True))
     model.add(LSTM(16, input_shape=(1, look_back), activation='relu'))
-    model.add(Dense(1))
+    model.add(Dense(1, activation='tanh'))
     model.compile(loss='mean_absolute_error', optimizer='adam')
     model.fit(trainX, trainY, epochs=150, batch_size=2, verbose=1)
     return model
@@ -65,7 +66,7 @@ if __name__ == '__main__':
     trainframe = get_dataframe('train.csv')
     #the following are test codes
     traintest = trainframe[trainframe.Store == 1]
-    traintest = traintest[traintest.Dept == 3]
+    traintest = traintest[traintest.Dept == 6]
     train, test = split_data(traintest)
     
     lookback = 1
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     for ind in test.index:
 #        testX = []
 #        testX.append(train.Weekly_Sales[ind-51-3:ind-51])
-        testX = train.Weekly_Sales[ind-51-1-143*2:ind-51-143*2]
+        testX = train.Weekly_Sales[ind-52-lookback-143*5:ind-52-143*5]
 #        testX = {'sales':testX}
 #        testX = pd.DataFrame(testX)
         testX = normalize_data(testX)
@@ -89,6 +90,6 @@ if __name__ == '__main__':
         testpredict = scaler.inverse_transform(testpredict)
         testY.append(testpredict[0][0])
     calcu_score(np.array(testY),groundtruth)
-    
+    del model
     
     
