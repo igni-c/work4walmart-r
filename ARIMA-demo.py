@@ -52,5 +52,6 @@ y_forecasted = np.array(y_forecasted['2012-04-06':])
 y_truth = np.array(dataset['2012-04-06':])
 
 # Compute the mean square error
-mse = ((y_forecasted - y_truth) ** 2).mean()
+result = y_forecasted - y_truth
+mse = (result[0,:]).mean()
 print('The Mean Squared Error of our forecasts is {}'.format(round(mse, 2)))

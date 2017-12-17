@@ -17,10 +17,12 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 
 dataframe = pd.read_csv('train.csv')
-dates = dataframe.Date
+dates = dataframe.Date[dataframe.Store == 1]
+#dates = dates[dataframe.Dept == 1].tolist()
 
-testdata = dataframe[dataframe.Store == 12]
-testdata = testdata.Weekly_Sales[dataframe.Dept == 98]
+
+testdata = dataframe[dataframe.Store == 1]
+testdata = testdata.Weekly_Sales[dataframe.Dept == 3]
 #testdata = testdata.astype('float32')
 
 plt.plot(testdata)
@@ -42,7 +44,7 @@ testdata = scaler.fit_transform(testdata)
 
 
 # split into train and test sets
-train_size = int(len(testdata) * 0.7)
+train_size = int(len(testdata) * 0.6)
 test_size = len(testdata) - train_size
 train, test = testdata[0:train_size,:], testdata[train_size:len(testdata),:]
 
@@ -57,6 +59,7 @@ testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 
 # create and fit the LSTM network
 model = Sequential()
+model.add(LSTM(16, input_shape=(1, look_back), activation='relu',return_sequences=True))
 model.add(LSTM(16, input_shape=(1, look_back), activation='relu'))
 model.add(Dense(1))
 model.compile(loss='mean_absolute_error', optimizer='adam')

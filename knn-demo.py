@@ -1,19 +1,10 @@
 # -*- coding: utf-8 -*-
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-#from pandas.plotting import scatter_matrix
-#import matplotlib.pyplot as plt
-#import seaborn as sns
-#from sklearn import model_selection
-#from sklearn.tree import DecisionTreeClassifier
-#from sklearn.neighbors import KNeighborsClassifier
-#from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-#from sklearn.naive_bayes import GaussianNB
-#from sklearn.svm import SVC
-#from sklearn import svm
-#from sklearn import metrics
+from sklearn.linear_model import LinearRegression
 import datetime
 from sklearn.ensemble import ExtraTreesRegressor
+
 #function to load the datasets
 def prodata():
     train = pd.read_csv("train.csv")
@@ -22,16 +13,7 @@ def prodata():
     feature = del_unemployment(feature)
     train = del_train_markdown(train)
     return (train,test,feature)
-#divide the markdowns into different groups
-#def del_lack_markdown(feature):
-#    a = pd.notnull(feature.MarkDown1)
-#    b = pd.notnull(feature.MarkDown2)
-#    c = pd.notnull(feature.MarkDown3)
-#    d = pd.notnull(feature.MarkDown4)
-#    e = pd.notnull(feature.MarkDown5)
-#    train = feature[a|b|c|d|e]
-#    feature = feature[feature.Date >= '2011-11-04']
-#    return feature
+
 #function to store the features column values
 def del_unemployment(feature):
     feature = feature[['Store','Date','Temperature','Fuel_Price','MarkDown1','MarkDown2','MarkDown3','MarkDown4','MarkDown5','IsHoliday']]
@@ -65,12 +47,15 @@ def combi_train_feature(train,test,feature,markdown):
         nextweek = str(nextweek)
         next2week = ymd+week+week
         next2week = str(next2week)
+        next3week = ymd+week+week+week
+        next3week = str(next3week)
         preweek = get_holiday_feature(preweek)
         pre2week = get_holiday_feature(pre2week)
         thisweek = get_holiday_feature(date)
         nextweek = get_holiday_feature(nextweek)
         next2week = get_holiday_feature(next2week)
-        train_x[j] =train_x[j]+preweek+thisweek+nextweek+pre2week+next2week
+        next3week = get_holiday_feature(next3week)
+        train_x[j] =train_x[j]+preweek+thisweek+nextweek+pre2week+next2week+next3week
         j += 1
     j = 0
     for i in range(len(test)):
@@ -93,9 +78,12 @@ def combi_train_feature(train,test,feature,markdown):
         pre2week = str(pre2week)
         next2week = ymd+week+week
         next2week = str(next2week)
+        next3week = ymd+week+week+week
+        next3week = str(next3week)
         pre2week = get_holiday_feature(pre2week)
         next2week = get_holiday_feature(next2week)
-        test_x[j] =test_x[j]+ preweek+thisweek+nextweek+pre2week+next2week
+        next3week = get_holiday_feature(next3week)
+        test_x[j] =test_x[j]+ preweek+thisweek+nextweek+pre2week+next2week+next3week
         dates.append(date)
         j += 1
     return (train_x,train_y,test_x,dates)
@@ -108,7 +96,7 @@ def find_from_feature(store,date,feature,markdown):
                     feature[i][j] = markdown[j-4]
             return feature[i][2:-1]
 #model the datasets
-def linear_model(train_x,train_y,test_x):
+def linear_r(train_x,train_y,test_x):
     clf = LinearRegression()
     clf.fit(train_x,train_y)
     test_y = clf.predict(test_x)
@@ -133,20 +121,26 @@ def nan_rep(trains):
     return result
 #handle holidays
 def get_holiday_feature(date):
+    easter = ['2010-04-02', '2011-04-22', '2012-04-06', '2013-03-29']
     super_bowl = ['2010-02-12','2011-02-11','2012-02-10','2013-02-08']
     labor = ['2010-09-10','2011-09-09','2012-09-07','2013-09-06']
     thx = ['2010-11-26','2011-11-25','2012-11-23','2013-11-29']
-    chris = ['2010-12-31','2011-12-30','2012-12-28','2013-12-27']
+    chris = ['2010-12-24','2011-12-23','2012-12-28','2013-12-27']
+    Halloween = ['2010-10-28', '2011-11-04', '2012-11-02', '2013-11-01']
     if date in super_bowl:
-        return [0,0,0,1]
+        return [0,0,0,0,0,1]
     elif date in labor:
-        return [0,0,1,0]
+        return [0,0,0,0,1,0]
     elif date in thx:
-        return [0,1,0,0]
+        return [0,0,0,1,0,0]
     elif date in chris:
-        return [1,0,0,0]
+        return [0,0,1,0,0,0]
+    elif date in easter:
+        return [0,1,0,0,0,0]
+    elif date in Halloween:
+        return [1,0,0,0,0,0]
     else:
-        return [0,0,0,0]
+        return [0,0,0,0,0,0]
 #save the output
 def write(y,store,dept,dates):
     f = open('result.csv','a')
@@ -178,13 +172,16 @@ if __name__=="__main__":
             trains = traindata[traindata.Dept == dept]
             tests = testdata[testdata.Dept == dept]
             markdown = nan_rep(featuredata)
-            #print('store=',i,' and dept ',dept)
             train_x,train_y,test_x,dates = combi_train_feature(trains,tests,featuredata,markdown)
             k = 3
             if len(test_x) > 0:
                 if len(train_x) <k:
                     test_y = knn_model(train_x,train_y,test_x,len(train_x))
+#                    test_y = linear_r(train_x,train_y,test_x)
                     write(test_y,i,dept,dates)
                 else:
                     test_y = knn_model(train_x,train_y,test_x,k)
+#                    test_y = linear_r(train_x,train_y,test_x)
                     write(test_y,i,dept,dates)
+#            test_y = linear_r(train_x,train_y,test_x)
+#            write(test_y,i,dept,dates)

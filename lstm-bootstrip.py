@@ -2,8 +2,6 @@
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import math
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
@@ -20,19 +18,19 @@ def get_dataframe(data_path):
 #    dataframe = dataframe[['Store', 'Dept', 'Date', 'Weekly_Sales']]
 #    return dataframe
     
-#def create_dataset(dataframe, lookback):
-#    dataX, dataY = [], []
-#    for i in range(len(dataframe) - lookback - 1):
-#        dataX.append(dataframe[i:(i+lookback)])
-#        dataY.append(dataframe[i+lookback])
-#    return np.array(dataX), np.array(dataY)
-
 def create_dataset(dataframe, lookback):
     dataX, dataY = [], []
-    for i in range(len(dataframe)-1, 53, -1):
-        dataX.append(dataframe[i-52-lookback:i-52, 0])
-        dataY.append(dataframe[i, 0])
+    for i in range(len(dataframe) - lookback - 1):
+        dataX.append(dataframe[i:(i+lookback)])
+        dataY.append(dataframe[i+lookback])
     return np.array(dataX), np.array(dataY)
+
+#def create_dataset(dataframe, lookback):
+#    dataX, dataY = [], []
+#    for i in range(len(dataframe)-1, 53, -1):
+#        dataX.append(dataframe[i-52-lookback:i-52, 0])
+#        dataY.append(dataframe[i, 0])
+#    return np.array(dataX), np.array(dataY)
 
 def normalize_data(dataset):
     dataset = dataset.values.reshape(-1, 1)
@@ -66,10 +64,10 @@ if __name__ == '__main__':
     trainframe = get_dataframe('train.csv')
     #the following are test codes
     traintest = trainframe[trainframe.Store == 1]
-    traintest = traintest[traintest.Dept == 6]
+    traintest = traintest[traintest.Dept == 1]
     train, test = split_data(traintest)
     
-    lookback = 1
+    lookback = 2
     train_sales = train.Weekly_Sales
     train_sales = normalize_data(train_sales)
     trainX,trainY = create_dataset(train_sales, lookback)
@@ -80,7 +78,7 @@ if __name__ == '__main__':
     for ind in test.index:
 #        testX = []
 #        testX.append(train.Weekly_Sales[ind-51-3:ind-51])
-        testX = train.Weekly_Sales[ind-52-lookback-143*5:ind-52-143*5]
+        testX = train.Weekly_Sales[ind-51-lookback:ind-51]
 #        testX = {'sales':testX}
 #        testX = pd.DataFrame(testX)
         testX = normalize_data(testX)
@@ -91,5 +89,6 @@ if __name__ == '__main__':
         testY.append(testpredict[0][0])
     calcu_score(np.array(testY),groundtruth)
     del model
+    
     
     
